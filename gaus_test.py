@@ -94,11 +94,11 @@ def main():
     book = openpyxl.open("new_table.xlsx", read_only=False)
     sheet = book.active
     #generate_random_system(2 , 19 , sheet)
-    print_newton_variant(15 , sheet)
+    print_newton_variant(10 , sheet)
     book.save("new_table.xlsx")
     arr = get_matrix(1 , (6 , 7) ,sheet)
     res = gauss_method((arr , 6) , sheet)
-
+    numxl.write_xlsx(arr  , 10 ,10 , sheet )
     book.save("new_table.xlsx")
-
+    print(type(arr))
 main()
