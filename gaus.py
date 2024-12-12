@@ -7,136 +7,115 @@ import numpy as np
 import matplotlib as mp
 
 import numxl
-
-def init_xlsx(filename: str, cols: int):
-    try:
-        wb = Workbook()
-        xlsx_sheet = wb.active
-        for col in range(1, cols + 100):
-            xlsx_sheet.cell(row=1, column=col, value=col)
-        file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{filename}.xlsx")
-        wb.save(file_path)
-        print(f"Файл создан и сохранен: {file_path}")
     
-    except Exception as e:
-        print(f"Ошибка создания файла: {e}")
 
-def generate_gaus_matrix(xlsx_filename:str, rows:int, cols:int, k_student_num:int):
-    try:
-        book = openpyxl.open(f"{os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx", read_only=False)
-        xlsx_sheet = book.active
-    except:
-        print(f"ошибка чтения файла {os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
+def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
+    """
+    Генерирует матрицу как список списков для метода Гаусса.
 
-    try:
-        for row in range(0, rows):
-            xlsx_sheet[row + 2][rows].value = (20 - k_student_num)/(row + 2)
-            for col in range(0, cols):
-                xlsx_sheet[row + 2][col].value = (k_student_num + 1)/(row + col + 22 - k_student_num)
-        book.save(f"{os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
-        print(f"Матрица {rows}x{cols} сгенерирована и сохранена в {os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
-    except Exception as e:
-        print(f"ошибка записи в файл {os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
-        print(e)
+    :param student_num: Номер студента.
+    :param rows: Количество строк в матрице.
+    :param cols: Количество столбцов в матрице.
+    :return: Матрица (список списков).
+    """
+    matrix = []  # Инициализируем пустую матрицу
 
-def read_xlsx_to_matrix(xlsx_filename:str, rows:int, cols:int) -> list:
-    try:
-        book = openpyxl.load_workbook(f"{os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
-        book_sheet = book.active
-    except Exception as e:
-        print(f"ошибка чтения файла {os.path.dirname(os.path.realpath(__file__))}/{xlsx_filename}.xlsx")
-        print(f"{e}")
+    for row in range(rows):  # Генерируем строки
+        current_row = []  # Инициализируем текущую строку
+        for col in range(cols):  # Генерируем столбцы
+            current_row.append((student_num + 1) / (row + col + 22 - student_num))  # Добавляем элемент в строку
+        # Добавляем значение для правой части уравнения
+        current_row.append((20 - student_num) / (row + 2))
+        matrix.append(current_row)  # Добавляем строку в матрицу
 
-    matrix = []
-
-    for row in range(2, rows + 2):
-        row_list = []
-        for col in range(2, cols + 2):
-            cell = book_sheet.cell(row=row, column=col)
-            row_list.append(cell.value)
-        matrix.append(row_list)
-    print(f"матрица успешно считана")
+    
 
     return matrix
 
-def forward_elimination(matrix: list, rows: int = 6, cols: int = 6) -> list:
+def forward_elimination(matrix: list):
     """
-    Выполняет прямой ход метода Гаусса для преобразования матрицы к верхнетреугольной форме.
-    
-    :param matrix: Двумерный список, представляющий расширенную матрицу системы линейных уравнений.
-    :param rows: Количество строк в матрице.
-    :param cols: Количество столбцов в матрице.
-    :return: Преобразованная матрица в верхнетреугольной форме.
+    Выполняет прямой ход метода Гаусса (зануление нижнего левого угла матрицы).
+    :param matrix: Двумерный список (список списков), представляющий матрицу.
+    :return: Преобразованная матрица (после прямого хода).
     """
-    for row in range(0, rows - 1):
-        # Находим ведущий элемент и проверяем его ненулевое значение
-        pivot = matrix[row][row]
-        if pivot == 0:
-            # Если ведущий элемент равен 0, ищем строку для перестановки
-            for swap_row in range(row + 1, rows - 1):
-                if matrix[swap_row][row] != 0:
-                    matrix[row], matrix[swap_row] = matrix[swap_row], matrix[row]
-                    pivot = matrix[row][row]
-                    break
-            else:
-                # Если подходящей строки не найдено, система может быть несовместимой или иметь бесконечное множество решений
-                raise ValueError("Матрица вырожденная, решение не может быть найдено.")
-        
-        # Приводим текущую строку так, чтобы ведущий элемент стал равен 1 (опционально)
-        for col in range(row, cols):
-            matrix[row][col] /= pivot
+    rows = len(matrix)         # Количество строк
+    columns = len(matrix[0])   # Количество столбцов (включая столбец свободных членов)
 
-        # Обнуляем элементы ниже ведущего
-        for i in range(row + 1, rows - 1):
-            factor = matrix[i][row]
-            for col in range(row, cols - 1):
-                matrix[i][col] -= factor * matrix[row][col]
-    
-    return matrix
-    
-def back_substitution(matrix: list, rows: int = 6, cols: int = 6) -> list:
-    """
-    Выполняет обратный ход метода Гаусса для нахождения решений.
-    
-    :param matrix: Верхнетреугольная матрица (расширенная матрица системы).
-    :param rows: Количество строк в матрице.
-    :param cols: Количество столбцов в матрице.
-    :return: Список решений для системы уравнений.
-    """
-    # Инициализируем список для решений
-    solutions = [0] * rows
-    
-    # Обратный ход: идем от последней строки к первой
-    for i in range(rows - 1, -1, -1):
-        # Свободный член b_i
-        solutions[i] = matrix[i][cols - 1]
-        
-        # Вычитаем уже найденные x_j
-        for j in range(i + 1, rows):
-            solutions[i] -= matrix[i][j] * solutions[j]
-        
-        # Делим на ведущий элемент
-        solutions[i] /= matrix[i][i]
-    
-    return solutions
+    # Копируем исходную матрицу для работы
+    matrix_clone = [row[:] for row in matrix]
 
+    for k in range(rows):  # k - номер текущей строки
+        # Деление k-строки на первый ненулевой элемент
+        divisor = matrix_clone[k][k]
+        for j in range(columns):
+            matrix_clone[k][j] /= divisor
+
+        # Зануление элементов ниже текущей строки
+        for i in range(k + 1, rows):  # i - индекс строки ниже k
+            factor = matrix_clone[i][k] / matrix_clone[k][k]
+            for j in range(columns):  # j - индекс столбца
+                matrix_clone[i][j] -= matrix_clone[k][j] * factor
+        
+
+    return matrix_clone
+    
+def backward_substitution(matrix: list):
+    """
+    Выполняет обратный ход метода Гаусса (зануление верхнего правого угла матрицы).
+    :param matrix: Двумерный список (список списков), представляющий матрицу.
+    :return: Преобразованная матрица.
+    """
+    rows = len(matrix)         # Количество строк
+    columns = len(matrix[0])   # Количество столбцов (включая свободные члены)
+
+    # Копируем исходную матрицу для работы
+    matrix_clone = [row[:] for row in matrix]
+
+    # Обратный ход
+    for k in range(rows - 1, -1, -1):  # k - номер строки (с конца к началу)
+        # Нормализация строки: деление на диагональный элемент
+        for i in range(columns - 1, -1, -1):  # i - номер столбца (с конца к началу)
+            matrix_clone[k][i] /= matrix[k][k]
+
+        # Зануление элементов выше текущей строки
+        for i in range(k - 1, -1, -1):  # i - индекс строки выше k
+            factor = matrix_clone[i][k] / matrix_clone[k][k]
+            for j in range(columns - 1, -1, -1):  # j - индекс столбца (с конца к началу)
+                matrix_clone[i][j] -= matrix_clone[k][j] * factor
+
+    return matrix_clone
+
+def extract_answers(matrix: list) -> list:
+    """
+    Извлекает столбец ответов из расширенной матрицы (последний столбец).
+    :param matrix: Двумерный список (список списков), представляющий расширенную матрицу.
+    :return: Список ответов (последний столбец).
+    """
+    rows = len(matrix)  # Количество строк
+    answers = [matrix[i][-1] for i in range(rows)]  # Извлечение последнего столбца
+    return answers
 
 def main():
     numxl.create_xlsx('gaus', 6)
-    generate_gaus_matrix('gaus', 6, 6, 10)
-    matrix = read_xlsx_to_matrix('gaus', 6, 6)
+    matrix = generate_gauss_matrix(10, 6, 6)
 
     print("[")
     print(*[str(row) for row in matrix], sep=",\n")
     print("]")
-
-    matrix = forward_elimination(matrix=matrix, rows=6, cols=6)
-    print("прямой ход [")
-    print(*[str(row) for row in matrix], sep=",\n")
+    forward_elimination_matrix = forward_elimination(matrix)
+    
+    print("forward_elimination_matrix[")
+    print(*[str(row) for row in forward_elimination_matrix], sep=",\n")
     print("]")
 
-    solutions = back_substitution(matrix=matrix, rows=6, cols=6)
-    print()
-    print(solutions)
+    backward_substitution_matrix = backward_substitution(forward_elimination_matrix)
+    print("backward_substitution_matrix[")
+    print(*[str(row) for row in backward_substitution_matrix], sep=",\n")
+    print("]")
+
+    answer_matrix = extract_answers(backward_substitution_matrix)
+    print("backward_substitution_matrix[")
+    print(*[str(row) for row in answer_matrix], sep=",\n")
+    print("]")
 
 main()
