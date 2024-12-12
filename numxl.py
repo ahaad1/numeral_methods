@@ -14,7 +14,7 @@ def create_xlsx(filename: str, cols: int):
         file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{filename}.xlsx")
         wb.save(file_path)
         print(f"Файл создан и сохранен: {file_path}")
-        return xlsx_sheet
+        return xlsx_sheet, wb
     
     except Exception as e:
         print(f"Ошибка создания файла: {e}")

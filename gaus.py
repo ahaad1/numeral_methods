@@ -8,6 +8,10 @@ import matplotlib as mp
 
 import numxl
     
+xlsx_sheet = None
+workbook = None
+
+step_row = 2
 
 def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
     """
@@ -18,6 +22,9 @@ def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
     :param cols: Количество столбцов в матрице.
     :return: Матрица (список списков).
     """
+    global step_row
+    global xlsx_sheet
+
     matrix = []  # Инициализируем пустую матрицу
 
     for row in range(rows):  # Генерируем строки
@@ -28,8 +35,8 @@ def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
         current_row.append((20 - student_num) / (row + 2))
         matrix.append(current_row)  # Добавляем строку в матрицу
 
-    
-
+    numxl.write_xlsx(arr=matrix, row=step_row, col=1, sheet=xlsx_sheet, message="Инициализация матрицы")
+    step_row += 9
     return matrix
 
 def forward_elimination(matrix: list):
@@ -38,6 +45,10 @@ def forward_elimination(matrix: list):
     :param matrix: Двумерный список (список списков), представляющий матрицу.
     :return: Преобразованная матрица (после прямого хода).
     """
+
+    global step_row
+    global xlsx_sheet
+
     rows = len(matrix)         # Количество строк
     columns = len(matrix[0])   # Количество столбцов (включая столбец свободных членов)
 
@@ -55,8 +66,8 @@ def forward_elimination(matrix: list):
             factor = matrix_clone[i][k] / matrix_clone[k][k]
             for j in range(columns):  # j - индекс столбца
                 matrix_clone[i][j] -= matrix_clone[k][j] * factor
-        
-
+                numxl.write_xlsx(arr=matrix, row=step_row, col=1, sheet=xlsx_sheet, message=f"Прямой ход шаг {i+j}")
+                step_row = step_row + 9
     return matrix_clone
     
 def backward_substitution(matrix: list):
@@ -96,26 +107,32 @@ def extract_answers(matrix: list) -> list:
     return answers
 
 def main():
-    numxl.create_xlsx('gaus', 6)
-    matrix = generate_gauss_matrix(10, 6, 6)
+    global step_row
+    global xlsx_sheet
+    global workbook
 
-    print("[")
-    print(*[str(row) for row in matrix], sep=",\n")
-    print("]")
+    xlsx_sheet, workbook = numxl.create_xlsx(filename='gaus', cols=6)
+
+    matrix = generate_gauss_matrix(student_num=10, rows=6, cols=6)
+    
+    # print("[")
+    # print(*[str(row) for row in matrix], sep=",\n")
+    # print("]")
     forward_elimination_matrix = forward_elimination(matrix)
     
-    print("forward_elimination_matrix[")
-    print(*[str(row) for row in forward_elimination_matrix], sep=",\n")
-    print("]")
+    # print("forward_elimination_matrix[")
+    # print(*[str(row) for row in forward_elimination_matrix], sep=",\n")
+    # print("]")
 
-    backward_substitution_matrix = backward_substitution(forward_elimination_matrix)
-    print("backward_substitution_matrix[")
-    print(*[str(row) for row in backward_substitution_matrix], sep=",\n")
-    print("]")
+    # backward_substitution_matrix = backward_substitution(forward_elimination_matrix)
+    # print("backward_substitution_matrix[")
+    # print(*[str(row) for row in backward_substitution_matrix], sep=",\n")
+    # print("]")
 
-    answer_matrix = extract_answers(backward_substitution_matrix)
-    print("backward_substitution_matrix[")
-    print(*[str(row) for row in answer_matrix], sep=",\n")
-    print("]")
+    # answer_matrix = extract_answers(backward_substitution_matrix)
+    # print("backward_substitution_matrix[")
+    # print(*[str(row) for row in answer_matrix], sep=",\n")
+    # print("]")
 
+    workbook.save('gaus.xlsx')
 main()
