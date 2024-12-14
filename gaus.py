@@ -12,6 +12,7 @@ xlsx_sheet = None
 workbook = None
 
 step_row = 2
+step_col = 1
 
 def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
     """
@@ -41,7 +42,9 @@ def generate_gauss_matrix(student_num: int, rows: int, cols: int) -> list:
 
 def forward_elimination(matrix: list):
     """
-    Выполняет прямой ход метода Гаусса (зануление нижнего левого угла матрицы).
+    Выполняет прямой ход метода Гаусса (зануление нижнего левого угла матрицы),
+    включая подсчёт шагов и их сохранение.
+    
     :param matrix: Двумерный список (список списков), представляющий матрицу.
     :return: Преобразованная матрица (после прямого хода).
     """
@@ -55,19 +58,42 @@ def forward_elimination(matrix: list):
     # Копируем исходную матрицу для работы
     matrix_clone = [row[:] for row in matrix]
 
+    step_count = 1  # Счётчик шагов
+
     for k in range(rows):  # k - номер текущей строки
         # Деление k-строки на первый ненулевой элемент
         divisor = matrix_clone[k][k]
         for j in range(columns):
             matrix_clone[k][j] /= divisor
 
+        # Запись текущего состояния после нормализации строки
+        numxl.write_xlsx(
+            arr=matrix_clone,
+            row=step_row,
+            col=1,
+            sheet=xlsx_sheet,
+            message=f"Прямой ход: Нормализация строки {k+1} (Шаг {step_count})"
+        )
+        step_row +=8
+        step_count += 1
+
         # Зануление элементов ниже текущей строки
         for i in range(k + 1, rows):  # i - индекс строки ниже k
-            factor = matrix_clone[i][k] / matrix_clone[k][k]
+            factor = matrix_clone[i][k]
             for j in range(columns):  # j - индекс столбца
                 matrix_clone[i][j] -= matrix_clone[k][j] * factor
-                numxl.write_xlsx(arr=matrix, row=step_row, col=1, sheet=xlsx_sheet, message=f"Прямой ход шаг {i+j}")
-                step_row = step_row + 9
+
+            # Запись текущего состояния после зануления строки
+            numxl.write_xlsx(
+                arr=matrix_clone,
+                row=step_row,
+                col=1,
+                sheet=xlsx_sheet,
+                message=f"Прямой ход: Зануление строки {i+1}, столбец {k+1} (Шаг {step_count})"
+            )
+            step_row += 8
+            step_count += 1
+
     return matrix_clone
     
 def backward_substitution(matrix: list):
