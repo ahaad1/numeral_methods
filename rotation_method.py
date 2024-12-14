@@ -5,10 +5,14 @@ import pandas as pd
 import numpy as np
 import matplotlib as mp
 import openpyxl
-from numpy.ma.core import shape
 from openpyxl import load_workbook
 import numxl
 
+def rounding ( number : float , rounding: float):
+    if abs(number) < rounding :
+        return 0
+    else:
+        return number 
 
 
 def print_rotation_variant( students_var : int , size : int):
@@ -39,15 +43,37 @@ def rotation_method( students_var : int  , size : int ):
     book.save("rotation_metod.xlsx")
 
     cos_and_sin = np.array((1 , 2) , dtype=float)
-    
-    for col  in range (0 , size + 1):
-        for row in range (1 , size ):
-            cos_and_sin [0] = matrix[row-1][col] / np.sqrt(pow(matrix[row-1][col] , 2) + pow(matrix[row][col] , 2))
-            cos_and_sin [1] = matrix[row][col] / np.sqrt(pow(matrix[row-1][col] , 2) + pow(matrix[row][col] , 2))
+    j = 0;
+    buf1 = 0;
+    buf2 = 0;
+    for col  in range (0 , size - 1):
+        j+=1;
+        for row in range (j , size ):
+            cos_and_sin [0] = matrix[col][col] / np.sqrt(pow(matrix[col][col] , 2) + pow(matrix[row][col] , 2))
+            cos_and_sin [1] = matrix[row][col] / np.sqrt(pow(matrix[col][col] , 2) + pow(matrix[row][col] , 2))
             numxl.write_xlsx(cos_and_sin , position , 1 , sheet , " Значения косинуса и синуса:" )
-            position += 5
-    
+            position += 4
+            for i in range ( col , size + 1):
+                buf1 = matrix[col][i]
+                buf2 = matrix[row][i]
+                matrix[col][i] = rounding( cos_and_sin[0]*buf1 + cos_and_sin[1]*buf2 , 1E-17)
+                matrix[row][i] =rounding(-cos_and_sin[1]*buf1 + cos_and_sin[0]*buf2 , 1E-17)
+            
+            numxl.write_xlsx(matrix , position , 1 ,sheet , f"Зануляем {row+1 , col+1} элемент:" )
+            position = position + size + 2
+
+
+    result = np.zeros((size , 1) , dtype=float)
+    result[size-1][0] = matrix[size-1][size]/matrix[size-1][size-1]
+    for xi in reversed(range(0 , size-1)):
+        x = 0
+        for j in range(1 , size-xi):
+            x = x + matrix[xi][size-j]*result[size-j][0]
+        result[xi][0] = (matrix[xi][size] - x)/matrix[xi][xi]
+
+
+    numxl.write_xlsx(result , 1 , size+3 , sheet , "Результат:")       
     book.save("rotation_metod.xlsx")
     
 
-rotation_method(5 , 6)
+rotation_method(10 , 6)
