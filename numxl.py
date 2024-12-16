@@ -10,7 +10,7 @@ def create_xlsx(filename: str, cols: int):
         wb = Workbook()
         xlsx_sheet = wb.active
         for col in range(1, cols + 100):
-            xlsx_sheet.cell(row=1, column=col, value=col)
+            xlsx_sheet.cell(row=1, column=col, value=" ")
         file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"{filename}.xlsx")
         wb.save(file_path)
         print(f"Файл создан и сохранен: {file_path}")
