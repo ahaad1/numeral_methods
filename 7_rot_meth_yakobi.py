@@ -88,5 +88,5 @@ def yakobi_method(size: int , epsilon: float ,  random_max_value: int):
 
 
 
-yakobi_method(5, 1E-12 , 10)
+yakobi_method(35, 1E-12 , 10)
 

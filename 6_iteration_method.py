@@ -79,7 +79,7 @@ def solve_iteration_method(size:int , epsilon: float):
 
 
 
-solve_iteration_method(10 , 1E-12)
+solve_iteration_method(7 , 1E-12)
 
 
 
